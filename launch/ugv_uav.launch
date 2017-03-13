@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+
+ <launch>
+<!--HECTOR_QUADROTOR-->
+<group ns="quadrotor">
+  <param name="tf_prefix" value="quadrotor"/>
+   <arg name="use_ground_truth_for_tf" default="true" />
+
+   <include file="$(find UGV_UAV)/launch/spawn_quadrotor.launch"> 
+     <arg name="model" value="$(find hector_quadrotor_description)/urdf/quadrotor_downward_cam.gazebo.xacro"/>
+     <arg name="use_ground_truth_for_tf" value="$(arg use_ground_truth_for_tf)" />
+     <arg name="robot_name"  value="quadrotor" />
+   </include>
+
+
+  <node name="joy" pkg="joy" type="joy_node" output="screen"/>
+   
+  <!-- Note that axis IDs are those from the joystick message plus one, to be able to invert axes by specifiying either positive or negative axis numbers XBOX GAMEPAD.-->
+  <!-- Axis 2 from joy message thus has to be set as '3' or '-3'(inverted mode) below-->
+  <!--rosparam command="load" file="$(find UGV_UAV)/launch/joystick_quadrotor.yaml" /-->
+
+  <node name="quadrotor_teleop" pkg="hector_quadrotor_teleop" type="quadrotor_teleop" output="screen">
+    <param name="x_axis" value="2"/>
+    <param name="y_axis" value="1"/>
+    <param name="z_axis" value="6"/>
+    <param name="yaw_axis" value="5"/>
+  </node>
+
+  <!-- PS3 GAMEPAD 
+  <node name="quadrotor_teleop" pkg="hector_quadrotor_teleop" type="quadrotor_teleop">
+    <param name="x_axis" value="4"/>
+    <param name="y_axis" value="3"/>
+    <param name="z_axis" value="2"/>
+    <param name="yaw_axis" value="1"/>
+  </node>-->
+
+  
+</group>
+
+<!-- MAP-->
+
+<!--node name="map_server" pkg="map_server" type="map_server" args="$(find summit_xl_2dnav)/maps/UPM/ETSII.yaml"/--> 
+
+ <!--SUMMIT -->
+<group ns="summit_XL">
+   <param name="tf_prefix" value="summit_XL"/>
+  <!-- start controller manager -->
+   <include file="$(find UGV_UAV)/launch/summit.launch">
+      <arg name="init_pose" value="-x -0.0 -y 0.0 -z -0.2" />
+      <arg name="robot_name"  value="summit_XL" />
+   </include>
+
+   <node respawn="true" pkg="joy" type="joy_node" name="joy" >
+     <param name="dev" type="string" value="/dev/input/js1" />
+     <param name="deadzone" value="0.12" />
+   </node>
+
+  <param name="cmd_topic_vel" value="/summit_XL/summit_xl_ctrl/command" type="string"/>
+  <param name="cmd_service_io" value="/modbus_io/write_digital_output" type="string"/>
+  <!-- param name="cmd_topic_ptz" value="/sphereptz/command_ptz" type="string"/-->
+  <rosparam command="load" file="$(find UGV_UAV)/launch/joystick_summit.yaml" />
+  <node name="summit_xl_joystick" pkg="summit_xl_joystick" type="summit_xl_joystick" output="screen"/>
+      <!--param name="button_dead_man" value="0"/>
+      <param name="axis_linear" value="2"/>
+      <param name="axis_angular" value="1"/>
+      <param name="button_speed_up" value="4"/>
+      <param name="button_speed_down" value="2"/>
+  </node-->
+  
+   <!-- POSE -->
+   <node pkg="pose_ekf" type="ekf_pose" name="ekf_pose">
+	<param name="output_frame" value="odom_combined"/>
+	<param name="freq" value="20.0"/>
+	<param name="sensor_timeout" value="1.0"/>
+	<param name="odom_used" value="true"/>
+	<param name="imu_used" value="true"/>
+	<param name="gps_used" value="true"/>
+	<param name="odom_topic" value="odom"/>
+	<param name="imu_topic" value="imu_data"/>
+	<param name="gps_topic" value="fix"/>
+   </node>  
+    
+   <!-- 2D NAV -->  
+   <!-- Throttle the voxel grid that is being published for rviz -->
+   <node ns="move_base_node/local_costmap" name="voxel_grid_throttle" pkg="topic_tools" type="throttle" args="messages voxel_grid 3.0 voxel_grid_throttled" />
+   <!-- for moving -->
+   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+	<remap from="scan" to="hokuyo_laser_topic" />
+	<remap from="cmd_vel" to="summit_xl_ctrl/command" />
+		
+		<!-- Load common configuration files -->
+		<rosparam file="$(find summit_xl_2dnav)/navigation_config/move_base_params.yaml" command="load" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_config/base_local_planner_params.yaml" command="load" ns="TrajectoryPlannerROS" />
+
+		<!-- Load global navigation specific parameters -->
+		<rosparam file="$(find summit_xl_2dnav)/navigation_local/config/move_base_params.yaml" command="load" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_local/config/local_costmap_params.yaml" command="load" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_local/config/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find summit_xl_2dnav)/navigation_local/config/base_local_planner_params.yaml" command="load" />
+	</node>  
+
+ </group>
+
+  <!-- STATIC TRANSFORMS to /map-->
+  <node name="truth_to_tf" pkg="message_to_tf" type="message_to_tf" output="screen">
+     <param name="odometry_topic" value="ground_truth/state" />
+     <param name="frame_id" value="/map" />
+  </node>
+   
+  <node pkg="tf" type="static_transform_publisher" name="global_origin_for_quadrotor" args="0 0 0.0 0 0 0 /map /nav 100" />
+  <node pkg="tf" type="static_transform_publisher" name="global_origin_for_summit_xl" args="0 0 0.0 0 0 0 /map /summit_XL/odom_combined 100" />
+  <node pkg="tf" type="static_transform_publisher" name="image_plane" args="0 0 0 0 3.14159265359 0 /quadrotor/downward_cam_optical_frame /image_plane 100" />
+  <!--3.14159265359 node pkg="tf" type="static_transform_publisher" name="image_plane_to_optical_frame" args="0.4 0 0 0 0 -1.571 /image_plane /quadrotor/downward_cam_optical_frame 100" /-->
+
+
+ </launch>

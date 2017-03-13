@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "UGV_UAV")
+set(UGV_UAV_MAINTAINER "baira <baira@todo.todo>")
+set(UGV_UAV_DEPRECATED "")
+set(UGV_UAV_VERSION "0.0.0")
+set(UGV_UAV_BUILD_DEPENDS "std_msgs" "roscpp")
+set(UGV_UAV_RUN_DEPENDS "std_msgs" "roscpp")
+set(UGV_UAV_BUILDTOOL_DEPENDS "catkin")

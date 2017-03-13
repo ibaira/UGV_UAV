@@ -1,0 +1,8 @@
+prefix=/home/baira/catkin_ws/devel/UGV_UAV/devel
+
+Name: UGV_UAV
+Description: Description of UGV_UAV
+Version: 0.0.0
+Cflags: -I/home/baira/catkin_ws/devel/UGV_UAV/include
+Libs: -L/home/baira/catkin_ws/devel/UGV_UAV/devel/lib 
+Requires: 

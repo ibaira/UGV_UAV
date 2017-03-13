@@ -1,0 +1,16 @@
+num_of_buttons: 12 
+axis_linear: 1
+axis_angular: 0 
+scale_linear: 3.0
+scale_angular: 2.0
+button_speed_up: 4 
+button_speed_down: 2
+button_dead_man: 0
+button_output_1: 6
+button_output_2: 7
+output_1: 7
+output_2: 7
+button_ptz_tilt_up: 5
+button_ptz_tilt_down: 7
+button_ptz_pan_right: 1
+button_ptz_pan_left: 2

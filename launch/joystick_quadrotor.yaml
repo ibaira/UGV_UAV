@@ -1,0 +1,8 @@
+num_of_buttons: 12 
+x_axis: 1
+y_axis: 0 
+z_axis: 5
+yaw_axis: 4
+button_speed_up: 4 
+button_speed_down: 2
+
